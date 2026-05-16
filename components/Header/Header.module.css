@@ -30,6 +30,10 @@
     text-decoration: none;
     color: white;
     font-size: 1rem;
+
+    display: flex;
+    align-items: center;
+    height: 100%;
 }
 
 .navigation li a:hover {
