@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { editProfile, EditProfileRequest } from "@/lib/clientApi";
+import { editProfile, EditProfileRequest } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
 import Image from "next/image";
 

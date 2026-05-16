@@ -1,7 +1,7 @@
 import axios from "axios";
 import toast from "react-hot-toast";
 
-import type { Note, NoteTag } from "../types/note";
+import type { Note, NoteTag } from "../../types/note";
 import type { User } from "@/types/user";
 
 import { proxyServerApi } from "./api";

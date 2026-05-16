@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FormEvent } from "react";
 
-import { login, LoginRequest } from "@/lib/clientApi";
+import { login, LoginRequest } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
 
 import css from "./sign-in.module.css";
