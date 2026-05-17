@@ -7,7 +7,7 @@ const publicRoutes = ["/sign-in", "/sign-up"];
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const accessToken = request.cookies.get("accessToken")?.value;
+  let accessToken = request.cookies.get("accessToken")?.value;
   const refreshToken = request.cookies.get("refreshToken")?.value;
 
   const isPrivateRoute = privateRoutes.some((route) =>
@@ -18,7 +18,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith(route),
   );
 
-  // 🔄 1. REFRESH SESSION
+  // 🔄 REFRESH SESSION
   if (!accessToken && refreshToken) {
     try {
       const res = await checkSession();
@@ -27,6 +27,8 @@ export async function proxy(request: NextRequest) {
       const newRefreshToken = res?.data?.refreshToken;
 
       if (newAccessToken) {
+        accessToken = newAccessToken;
+
         const response = NextResponse.next();
 
         response.cookies.set("accessToken", newAccessToken, {
@@ -45,14 +47,19 @@ export async function proxy(request: NextRequest) {
           });
         }
 
+        // 💥 ВАЖЛИВО: якщо після refresh user вже logged in
+        if (isPublicRoute) {
+          return NextResponse.redirect(new URL("/profile", request.url));
+        }
+
         return response;
       }
-    } catch (error) {
-      console.log(error);
+    } catch (e) {
+      // ignore
     }
   }
 
-  // 🔐 2. НЕ АВТОРИЗОВАНИЙ
+  // 🔐 NOT AUTHENTICATED
   if (!accessToken) {
     if (isPrivateRoute) {
       return NextResponse.redirect(new URL("/sign-in", request.url));
@@ -60,11 +67,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 🔐 3. АВТОРИЗОВАНИЙ
-  if (accessToken) {
-    if (isPublicRoute) {
-      return NextResponse.redirect(new URL("/profile", request.url));
-    }
+  // 🔐 AUTHENTICATED
+  if (isPublicRoute) {
+    return NextResponse.redirect(new URL("/profile", request.url));
   }
 
   return NextResponse.next();

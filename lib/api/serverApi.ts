@@ -43,10 +43,10 @@ export async function fetchNotes({
   return res.data;
 }
 
-export async function fetchNoteById(id: string) {
+export async function fetchNoteById(id: string): Promise<Note> {
   const cookieStore = await cookies();
 
-  const res = await proxyServerApi.get(`/notes/${id}`, {
+  const res = await proxyServerApi.get<Note>(`/notes/${id}`, {
     headers: {
       Cookie: cookieStore.toString(),
     },
