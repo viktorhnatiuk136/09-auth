@@ -18,7 +18,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith(route),
   );
 
-  // 🔄 1. Якщо нема accessToken, але є refreshToken — пробуємо оновити сесію
+  // 🔄 1. REFRESH SESSION
   if (!accessToken && refreshToken) {
     try {
       const res = await checkSession();
@@ -36,7 +36,6 @@ export async function proxy(request: NextRequest) {
           sameSite: "lax",
         });
 
-        // якщо бекенд оновив refreshToken
         if (newRefreshToken) {
           response.cookies.set("refreshToken", newRefreshToken, {
             httpOnly: true,
@@ -48,12 +47,12 @@ export async function proxy(request: NextRequest) {
 
         return response;
       }
-    } catch (e) {
-      // якщо refresh не спрацював — просто йдемо далі
+    } catch (error) {
+      console.log(error);
     }
   }
 
-  // 🔐 2. Якщо немає accessToken — редірект на login
+  // 🔐 2. НЕ АВТОРИЗОВАНИЙ
   if (!accessToken) {
     if (isPrivateRoute) {
       return NextResponse.redirect(new URL("/sign-in", request.url));
@@ -61,12 +60,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 🔐 3. Якщо авторизований — не пускаємо на login/register
+  // 🔐 3. АВТОРИЗОВАНИЙ
   if (accessToken) {
     if (isPublicRoute) {
       return NextResponse.redirect(new URL("/profile", request.url));
     }
-    return NextResponse.next();
   }
 
   return NextResponse.next();

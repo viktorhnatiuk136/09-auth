@@ -31,7 +31,7 @@ export async function fetchNotes({
   search,
   tag,
 }: FetchNotesParams): Promise<NoteHTTPResponse> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   const res = await proxyServerApi.get<NoteHTTPResponse>("/notes", {
     params: { page, search, tag },
@@ -44,7 +44,7 @@ export async function fetchNotes({
 }
 
 export async function fetchNoteById(id: string) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   const res = await proxyServerApi.get(`/notes/${id}`, {
     headers: {
