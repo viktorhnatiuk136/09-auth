@@ -5,6 +5,38 @@ import type { User } from "@/types/user";
 
 import { proxyServerApi } from "./api";
 
+export interface NoteHTTPResponse {
+  notes: Note[];
+  totalPages: number;
+}
+
+interface FetchNotesParams {
+  page: number;
+  search: string;
+  tag?: string;
+}
+
+export async function fetchNotes({
+  page,
+  search,
+  tag,
+}: FetchNotesParams): Promise<NoteHTTPResponse> {
+  const res = await proxyServerApi.get<NoteHTTPResponse>("/notes", {
+    params: { page, search, tag },
+  });
+  return res.data;
+}
+
+export async function fetchNoteById(id: string): Promise<Note> {
+  try {
+    const res = await proxyServerApi.get<Note>(`/notes/${id}`);
+    return res.data;
+  } catch (error) {
+    toast.error("Failed to fetch note");
+    throw error;
+  }
+}
+
 interface CreateNoteRequest {
   title: string;
   content: string;
