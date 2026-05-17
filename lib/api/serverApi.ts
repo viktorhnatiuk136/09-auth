@@ -1,7 +1,10 @@
 import { cookies } from "next/headers";
+import { AxiosResponse } from "axios";
 import { proxyServerApi } from "./api";
 
-export const checkServerSession = async () => {
+import type { Note } from "@/types/note";
+
+export const checkSession = async (): Promise<AxiosResponse> => {
   const cookieStore = await cookies();
   const res = await proxyServerApi.get("/auth/session", {
     headers: {
@@ -12,3 +15,42 @@ export const checkServerSession = async () => {
   // Повертаємо повний респонс, щоб proxy мав доступ до нових cookie
   return res;
 };
+
+export interface NoteHTTPResponse {
+  notes: Note[];
+  totalPages: number;
+}
+
+interface FetchNotesParams {
+  page: number;
+  search: string;
+  tag?: string;
+}
+export async function fetchNotes({
+  page,
+  search,
+  tag,
+}: FetchNotesParams): Promise<NoteHTTPResponse> {
+  const cookieStore = cookies();
+
+  const res = await proxyServerApi.get<NoteHTTPResponse>("/notes", {
+    params: { page, search, tag },
+    headers: {
+      Cookie: cookieStore.toString(),
+    },
+  });
+
+  return res.data;
+}
+
+export async function fetchNoteById(id: string) {
+  const cookieStore = cookies();
+
+  const res = await proxyServerApi.get(`/notes/${id}`, {
+    headers: {
+      Cookie: cookieStore.toString(),
+    },
+  });
+
+  return res.data;
+}

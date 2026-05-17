@@ -1,31 +1,9 @@
-import axios from "axios";
 import toast from "react-hot-toast";
 
 import type { Note, NoteTag } from "../../types/note";
 import type { User } from "@/types/user";
 
 import { proxyServerApi } from "./api";
-
-export interface NoteHTTPResponse {
-  notes: Note[];
-  totalPages: number;
-}
-
-interface FetchNotesParams {
-  page: number;
-  search: string;
-  tag?: string;
-}
-export async function fetchNotes({
-  page,
-  search,
-  tag,
-}: FetchNotesParams): Promise<NoteHTTPResponse> {
-  const res = await proxyServerApi.get<NoteHTTPResponse>("/notes", {
-    params: { page, search, tag },
-  });
-  return res.data;
-}
 
 interface CreateNoteRequest {
   title: string;
@@ -48,16 +26,6 @@ export async function deleteNote(id: string): Promise<Note> {
     return res.data;
   } catch (error) {
     toast.error("Failed to delete note");
-    throw error;
-  }
-}
-
-export async function fetchNoteById(id: string): Promise<Note> {
-  try {
-    const res = await proxyServerApi.get<Note>(`/notes/${id}`);
-    return res.data;
-  } catch (error) {
-    toast.error("Failed to fetch note");
     throw error;
   }
 }
@@ -105,7 +73,6 @@ export const getMe = async () => {
 
 //Функція оновлення профілю
 export type EditProfileRequest = {
-  email: string;
   username: string;
 };
 export async function editProfile(data: EditProfileRequest) {

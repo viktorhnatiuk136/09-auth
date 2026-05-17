@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkSession } from "./lib/api/serverApi";
 
 const privateRoutes = ["/profile", "/notes"];
 const publicRoutes = ["/sign-in", "/sign-up"];
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const accessToken = request.cookies.get("accessToken")?.value;
+  const refreshToken = request.cookies.get("refreshToken")?.value;
 
   const isPrivateRoute = privateRoutes.some((route) =>
     pathname.startsWith(route),
@@ -16,25 +18,54 @@ export function proxy(request: NextRequest) {
     pathname.startsWith(route),
   );
 
-  // 🔐 Якщо користувач НЕ авторизований
+  // 🔄 1. Якщо нема accessToken, але є refreshToken — пробуємо оновити сесію
+  if (!accessToken && refreshToken) {
+    try {
+      const res = await checkSession();
+
+      const newAccessToken = res?.data?.accessToken;
+      const newRefreshToken = res?.data?.refreshToken;
+
+      if (newAccessToken) {
+        const response = NextResponse.next();
+
+        response.cookies.set("accessToken", newAccessToken, {
+          httpOnly: true,
+          path: "/",
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
+
+        // якщо бекенд оновив refreshToken
+        if (newRefreshToken) {
+          response.cookies.set("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            path: "/",
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+          });
+        }
+
+        return response;
+      }
+    } catch (e) {
+      // якщо refresh не спрацював — просто йдемо далі
+    }
+  }
+
+  // 🔐 2. Якщо немає accessToken — редірект на login
   if (!accessToken) {
-    // неавторизований → пробує зайти в приватну сторінку
     if (isPrivateRoute) {
       return NextResponse.redirect(new URL("/sign-in", request.url));
     }
-
-    // публічні сторінки дозволяємо
     return NextResponse.next();
   }
 
-  // 🔐 Якщо користувач АВТОРИЗОВАНИЙ
+  // 🔐 3. Якщо авторизований — не пускаємо на login/register
   if (accessToken) {
-    // авторизований → не може бачити login/register
     if (isPublicRoute) {
       return NextResponse.redirect(new URL("/profile", request.url));
     }
-
-    // приватні сторінки дозволяємо
     return NextResponse.next();
   }
 
